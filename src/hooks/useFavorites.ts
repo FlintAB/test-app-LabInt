@@ -1,8 +1,43 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-// Избранные матчи (по id). Хранятся только в памяти, пока открыто приложение.
+import { loadFavorites, saveFavorites } from '../storage/favorites';
+
+// Избранные матчи (по id). Сохраняются в AsyncStorage и переживают перезапуск.
 export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([]);
+  // Пока не прочитали сохранённое, нельзя записывать пустой список обратно.
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadFavorites()
+      .then((stored) => {
+        if (cancelled) {
+          return;
+        }
+
+        setFavorites(stored);
+        setIsHydrated(true);
+      })
+      .catch((error: unknown) => {
+        console.warn('Не удалось загрузить избранное', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    saveFavorites(favorites).catch((error: unknown) => {
+      console.warn('Не удалось сохранить избранное', error);
+    });
+  }, [favorites, isHydrated]);
 
   // includes() вместо Boolean(indexOf()): indexOf() возвращает 0 для первого
   // элемента и -1 для отсутствующего — оба значения легко перепутать.
