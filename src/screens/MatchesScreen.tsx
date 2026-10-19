@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -7,8 +8,10 @@ import {
   View,
 } from 'react-native';
 
+import { FilterBar } from '../components/FilterBar';
 import { MatchCard } from '../components/MatchCard';
 import { useMatches } from '../hooks/useMatches';
+import { filterMatches, type MatchesFilter } from '../utils/matchesFilter';
 
 function Header({ round }: { round: number | null }) {
   return (
@@ -50,13 +53,11 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-function EmptyState() {
+function EmptyState({ title, text }: { title: string; text: string }) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.stateTitle}>Матчей пока нет</Text>
-      <Text style={styles.stateText}>
-        Когда в туре появятся матчи, они отобразятся здесь.
-      </Text>
+      <Text style={styles.stateTitle}>{title}</Text>
+      <Text style={styles.stateText}>{text}</Text>
     </View>
   );
 }
@@ -64,6 +65,7 @@ function EmptyState() {
 // Экран «Матчи тура» — задание в README.md, часть 1.
 export function MatchesScreen() {
   const { matches, round, isInitialLoading, error, reload } = useMatches();
+  const [filter, setFilter] = useState<MatchesFilter>('all');
 
   if (isInitialLoading) {
     return (
@@ -83,15 +85,25 @@ export function MatchesScreen() {
     );
   }
 
+  const visibleMatches = filterMatches(matches, filter);
+  const emptyTitle = matches.length === 0 ? 'Матчей пока нет' : 'Здесь матчей нет';
+  const emptyText =
+    matches.length === 0
+      ? 'Когда в туре появятся матчи, они отобразятся здесь.'
+      : 'В этой категории нет матчей. Выберите другой фильтр.';
+
   return (
     <View style={styles.container}>
+      <Header round={round} />
+      <FilterBar value={filter} onChange={setFilter} />
+
       <FlatList
-        data={matches}
+        style={styles.list}
+        data={visibleMatches}
         keyExtractor={(match) => match.id}
         renderItem={({ item }) => <MatchCard match={item} />}
         ItemSeparatorComponent={Separator}
-        ListHeaderComponent={<Header round={round} />}
-        ListEmptyComponent={<EmptyState />}
+        ListEmptyComponent={<EmptyState title={emptyTitle} text={emptyText} />}
         contentContainerStyle={styles.listContent}
       />
     </View>
@@ -104,6 +116,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     backgroundColor: '#f3f4f6',
+  },
+  list: {
+    flex: 1,
   },
   listContent: {
     paddingBottom: 24,
