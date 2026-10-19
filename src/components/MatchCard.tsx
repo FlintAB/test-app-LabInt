@@ -1,9 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Match } from '../types/match';
+import { FavoriteButton } from './FavoriteButton';
 
 type Props = {
   match: Match;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -69,7 +72,7 @@ function getStartsAtText(startsAt: string | null): string {
   return `${day}, ${time}`;
 }
 
-export function MatchCard({ match }: Props) {
+export function MatchCard({ match, isFavorite, onToggleFavorite }: Props) {
   const hasScore = match.score !== null;
 
   return (
@@ -78,7 +81,14 @@ export function MatchCard({ match }: Props) {
         <Text style={[styles.status, getStatusStyle(match.status)]}>
           {getStatusLabel(match)}
         </Text>
-        <Text style={styles.date}>{getStartsAtText(match.startsAt)}</Text>
+
+        <View style={styles.metaRight}>
+          <Text style={styles.date}>{getStartsAtText(match.startsAt)}</Text>
+          <FavoriteButton
+            active={isFavorite}
+            onPress={() => onToggleFavorite(match.id)}
+          />
+        </View>
       </View>
 
       <View style={styles.teams}>
@@ -132,6 +142,12 @@ const styles = StyleSheet.create({
   },
   statusPostponed: {
     color: '#d97706',
+  },
+  metaRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+    gap: 6,
   },
   date: {
     flexShrink: 1,

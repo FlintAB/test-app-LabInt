@@ -11,6 +11,7 @@ import {
 import { FilterBar } from '../components/FilterBar';
 import { MatchCard } from '../components/MatchCard';
 import { UpdatedAgo } from '../components/UpdatedAgo';
+import { useFavorites } from '../hooks/useFavorites';
 import { useMatches } from '../hooks/useMatches';
 import { filterMatches, type MatchesFilter } from '../utils/matchesFilter';
 
@@ -136,6 +137,7 @@ export function MatchesScreen() {
     updatedAt,
     reload,
   } = useMatches();
+  const { favorites, isFavorite, toggle } = useFavorites();
   const [filter, setFilter] = useState<MatchesFilter>('all');
 
   if (isInitialLoading) {
@@ -178,8 +180,15 @@ export function MatchesScreen() {
       <FlatList
         style={styles.list}
         data={visibleMatches}
+        extraData={favorites}
         keyExtractor={(match) => match.id}
-        renderItem={({ item }) => <MatchCard match={item} />}
+        renderItem={({ item }) => (
+          <MatchCard
+            match={item}
+            isFavorite={isFavorite(item.id)}
+            onToggleFavorite={toggle}
+          />
+        )}
         ItemSeparatorComponent={Separator}
         ListEmptyComponent={<EmptyState title={emptyTitle} text={emptyText} />}
         contentContainerStyle={styles.listContent}
